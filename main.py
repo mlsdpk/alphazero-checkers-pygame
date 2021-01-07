@@ -4,7 +4,9 @@ from checkers.Game import Game
 # initialize pygame
 pygame.init()
 
-SCREEN = pygame.display.set_mode([500, 500])
+width, height = 640, 640
+
+SCREEN = pygame.display.set_mode([width, height])
 
 def main():
 

@@ -1,9 +1,12 @@
 import pygame
+from .Board import Board
 
 class Game:
     def __init__(self, screen):
         self.SCREEN = screen
         self.running = True
+
+        self.board = Board()
 
     def update(self):
 
@@ -14,10 +17,10 @@ class Game:
     def render(self):
 
         # Fill the background with white
-        self.SCREEN.fill((255, 255, 255))
+        self.SCREEN.fill((0, 0, 0))
 
-        # Draw a solid blue circle in the center
-        pygame.draw.circle(self.SCREEN, (0, 0, 255), (250, 250), 75)
+        # Render board
+        self.board.render(self.SCREEN)
 
         # Update the display
         pygame.display.update()
