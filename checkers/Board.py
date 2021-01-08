@@ -77,7 +77,7 @@ class Board:
                         self.grid[curr_row][curr_col].valid_grids.append((left_grid_row_, left_grid_col_))
                         self.opponent_piece_eaten['left'] = [left_grid_row, left_grid_col, left_grid_row_, left_grid_col_]
 
-            if self.grid[left_grid_row][left_grid_col] == 0:
+            else:
                 self.grid[curr_row][curr_col].valid_grids.append((left_grid_row, left_grid_col))
 
         # check to make sure between boundaries
@@ -90,8 +90,18 @@ class Board:
                         self.grid[curr_row][curr_col].valid_grids.append((right_grid_row_, right_grid_col_))
                         self.opponent_piece_eaten['right'] = [right_grid_row, right_grid_col, right_grid_row_, right_grid_col_]
 
-            if self.grid[right_grid_row][right_grid_col] == 0:
+            else:
                 self.grid[curr_row][curr_col].valid_grids.append((right_grid_row, right_grid_col))
+
+
+        if 'left' in self.opponent_piece_eaten and 'right' not in self.opponent_piece_eaten:
+            print("Left side exist and right not")
+            self.grid[curr_row][curr_col].valid_grids = self.grid[curr_row][curr_col].valid_grids[:1]
+
+        if 'right' in self.opponent_piece_eaten and 'left' not in self.opponent_piece_eaten:
+            print("Right side exist and left not")
+            self.grid[curr_row][curr_col].valid_grids = [self.grid[curr_row][curr_col].valid_grids[-1]]
+            print(self.grid[curr_row][curr_col].valid_grids)
 
 
         if len(self.grid[curr_row][curr_col].valid_grids) > 0:
@@ -124,6 +134,7 @@ class Board:
                     if (selected_row == self.opponent_piece_eaten[side][2]) & (selected_col == self.opponent_piece_eaten[side][3]):
                         print(f"Eating {side} Side of piece.")
                         self.grid[self.opponent_piece_eaten[side][0]][self.opponent_piece_eaten[side][1]] = 0
+            self.opponent_piece_eaten = {}
             #
             # if 'left' in self.opponent_piece_eaten:
             #     if (selected_row == self.opponent_piece_eaten['left'][2]) & (selected_col == self.opponent_piece_eaten['left'][3]):
