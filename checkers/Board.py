@@ -29,6 +29,7 @@ class Board:
         self.init_grid()
 
         self.selected_piece = None
+        self.opponent_piece_eaten = {} # row, col
 
     def init_grid(self):
         for row in range(len(self.grid)):
@@ -67,15 +68,38 @@ class Board:
         right_grid_row, right_grid_col = curr_row+player_turn, curr_col+1
 
         # check to make sure between boundaries
-        if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
-            # if it is empty
-            if self.grid[left_grid_row][left_grid_col] == 0:
+        if left_grid_row >= 0 and left_grid_col <= 7 and left_grid_col >= 0:
+
+            if isinstance(self.grid[left_grid_row][left_grid_col], Piece):
+                left_grid_row_, left_grid_col_ = left_grid_row+player_turn, left_grid_col -1
+                if left_grid_row_ >= 0 and left_grid_col_ >= 0 and left_grid_col_ <= 7 and (self.grid[left_grid_row][left_grid_col].player != player_turn) and (self.grid[left_grid_row_][left_grid_col_] == 0):
+                    self.grid[curr_row][curr_col].valid_grids.append((left_grid_row_, left_grid_col_))
+                    self.opponent_piece_eaten['left'] = [left_grid_row, left_grid_col, left_grid_row_, left_grid_col_]
+
+            else:
                 self.grid[curr_row][curr_col].valid_grids.append((left_grid_row, left_grid_col))
 
-        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
-            # if it is empty
-            if self.grid[right_grid_row][right_grid_col] == 0:
+        # check to make sure between boundaries
+        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col <= 7:
+
+            if isinstance(self.grid[right_grid_row][right_grid_col], Piece):
+                right_grid_row_, right_grid_col_ = right_grid_row+player_turn, right_grid_col +1
+                if right_grid_row_ <= 7 and right_grid_col_ >= 0 and right_grid_col_ <= 7 and (self.grid[right_grid_row][right_grid_col].player != player_turn) and (self.grid[right_grid_row_][right_grid_col_] == 0):
+                    self.grid[curr_row][curr_col].valid_grids.append((right_grid_row_, right_grid_col_))
+                    self.opponent_piece_eaten['right'] = [right_grid_row, right_grid_col, right_grid_row_, right_grid_col_]
+
+            else:
                 self.grid[curr_row][curr_col].valid_grids.append((right_grid_row, right_grid_col))
+
+
+        if 'left' in self.opponent_piece_eaten and 'right' not in self.opponent_piece_eaten:
+            print("Left side exist and right not")
+            self.grid[curr_row][curr_col].valid_grids = [self.grid[curr_row][curr_col].valid_grids[0]]
+
+        if 'right' in self.opponent_piece_eaten and 'left' not in self.opponent_piece_eaten:
+            print("Right side exist and left not")
+            self.grid[curr_row][curr_col].valid_grids = [self.grid[curr_row][curr_col].valid_grids[-1]]
+
 
         if len(self.grid[curr_row][curr_col].valid_grids) > 0:
             return True
@@ -98,14 +122,26 @@ class Board:
             self.grid[self.selected_piece[0]][self.selected_piece[1]].selected = False
             self.grid[selected_row][selected_col] = self.grid[self.selected_piece[0]][self.selected_piece[1]]
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
+
+
+            # Remove eaten Piece
+            sides = ['left', 'right']
+            for side in sides:
+                if side in self.opponent_piece_eaten:
+                    if (selected_row == self.opponent_piece_eaten[side][2]) and (selected_col == self.opponent_piece_eaten[side][3]):
+                        print(f"Eating {side} Side of piece.")
+                        self.grid[self.opponent_piece_eaten[side][0]][self.opponent_piece_eaten[side][1]] = 0
+            self.opponent_piece_eaten = {}
             self.selected_piece = None
             return True
-        else: 
+
+        else:
             self.grid[self.selected_piece[0]][self.selected_piece[1]].valid_grids = []
             self.grid[self.selected_piece[0]][self.selected_piece[1]].selected = False
             self.selected_piece = None
+            self.opponent_piece_eaten = {}
             return False
-        
+
     # rendering stuffs
     def render(self, screen, player_turn):
 
