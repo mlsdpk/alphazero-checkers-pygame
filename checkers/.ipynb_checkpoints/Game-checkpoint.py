@@ -13,10 +13,15 @@ class Game:
             0 - Selection Mode
             1 - Active Mode
         '''
-        self.mode = 0
+        self.mode = 9
         self.player_turn = 1
 
     def update(self):
+        if self.mode == 9:
+            print('Mode 9')
+            if self.board.find_valid_pieces(self.player_turn):
+                self.mode = 0
+                print("Mode 0")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -32,21 +37,22 @@ class Game:
                         print("Mode 1")
 
                 if self.mode == 1:
+                    self.board.valid_pieces=[]
                     if self.board.find_valid_moves(self.player_turn):
                         self.mode = 2
                         print("Mode 2")
                     else:
-                        self.mode = 0
-                        print("Mode 0")
+                        self.mode = 9
+                        print("Mode 9")
 
                 elif self.mode == 2:
                     if self.board.move_piece(mouse_x, mouse_y):
-                        self.mode = 0
+                        self.mode = 9
                         self.player_turn = -1*self.player_turn
-                        print("Mode 0")
+                        print("Mode 9")
                     else:
-                        self.mode = 0
-                        print("Mode 0")
+                        self.mode = 9
+                        print("Mode 9")
 
     def render(self):
 

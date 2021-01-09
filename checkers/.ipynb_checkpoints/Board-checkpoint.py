@@ -23,11 +23,12 @@ class Board:
             'BLACK': (0, 0, 0),
             'GREY': (150, 150, 150),
             'GREEN': (0, 255, 0),
-            'LGREEN': (144, 238, 144)
+            'LGREEN': (144, 238, 144),
+            'YELLOW': (255, 255, 0)
         }
 
         self.init_grid()
-
+        self.valid_pieces = []
         self.selected_piece = None
 
     def init_grid(self):
@@ -57,7 +58,32 @@ class Board:
         self.selected_piece = (selected_row, selected_col)
 
         return True
-
+    
+    def find_valid_pieces(self, player_turn):
+        for row in range(len(self.grid)):
+            for col in range(len(self.grid)):
+                
+                if not isinstance(self.grid[row][col], Piece):
+                    continue
+                if self.grid[row][col].player != player_turn:
+                    continue
+        
+                left_grid_row, left_grid_col = row+player_turn, col-1
+                right_grid_row, right_grid_col = row+player_turn, col+1
+                
+                if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
+                    if self.grid[left_grid_row][left_grid_col] == 0:
+                        self.valid_pieces.append((row,col))
+                        continue
+                if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
+                    if self.grid[right_grid_row][right_grid_col] == 0:
+                        self.valid_pieces.append((row,col))
+                        continue
+        print(self.valid_pieces)
+        return (len(self.valid_pieces)>0)
+            
+    
+    
     def find_valid_moves(self, player_turn):
 
         curr_row, curr_col = self.selected_piece
@@ -148,3 +174,13 @@ class Board:
             for x, y in self.grid[self.selected_piece[0]][self.selected_piece[1]].valid_grids:
                 pygame.draw.rect(screen, self.colors['LGREEN'],
                     (y*self.grid_size, x*self.grid_size, self.grid_size, self.grid_size))
+                
+        if len(self.valid_pieces)>0:
+            for r,c in self.valid_pieces:
+                pygame.draw.rect(screen, self.colors['YELLOW'],
+                    (c*self.grid_size, r*self.grid_size, self.grid_size, self.grid_size))
+                
+                pygame.draw.circle(screen,
+                    self.colors['WHITE'] if player_turn == 1 else self.colors['BLACK'],
+                    (c*self.grid_size + self.grid_size/2, r*self.grid_size + self.grid_size/2),self.grid_size/3
+                )
