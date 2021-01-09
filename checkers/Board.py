@@ -68,7 +68,7 @@ class Board:
         right_grid_row, right_grid_col = curr_row+player_turn, curr_col+1
 
         # check to make sure between boundaries
-        if left_grid_row >= 0 and left_grid_col >= 0 and left_grid_col <= 7:
+        if left_grid_row >= 0 and left_grid_col <= 7 and left_grid_col >= 0:
 
             if isinstance(self.grid[left_grid_row][left_grid_col], Piece):
                 left_grid_row_, left_grid_col_ = left_grid_row+player_turn, left_grid_col -1
@@ -80,7 +80,7 @@ class Board:
                 self.grid[curr_row][curr_col].valid_grids.append((left_grid_row, left_grid_col))
 
         # check to make sure between boundaries
-        if right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
+        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col <= 7:
 
             if isinstance(self.grid[right_grid_row][right_grid_col], Piece):
                 right_grid_row_, right_grid_col_ = right_grid_row+player_turn, right_grid_col +1
