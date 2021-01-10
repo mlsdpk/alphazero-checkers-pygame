@@ -1,13 +1,14 @@
 import pygame
 from .Board import Board
 
+
 class Game:
+
     def __init__(self, screen):
         self.SCREEN = screen
         self.running = True
 
         self.board = Board()
-
         '''
             Game Modes
             0 - Check Mode
@@ -33,24 +34,25 @@ class Game:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
                 if self.mode == 1:
-                    if self.board.selection_mode(mouse_x, mouse_y, self.player_turn):
+                    if self.board.selection_mode(mouse_x, mouse_y,
+                                                 self.player_turn):
                         self.mode = 2
                         print("Mode 2")
 
                 if self.mode == 2:
-                    self.board.valid_pieces=[]
+                    self.board.valid_pieces = []
                     if self.board.find_valid_moves(self.player_turn):
                         self.mode = 3
                         print("Mode 3")
                     else:
                         self.mode = 0
-#                         self.mode = 1
+                        #                         self.mode = 1
                         print("Mode 0")
 
                 elif self.mode == 3:
                     if self.board.move_piece(mouse_x, mouse_y):
                         self.mode = 0
-                        self.player_turn = -1*self.player_turn
+                        self.player_turn = -1 * self.player_turn
                         print("Mode 0")
                     else:
                         self.mode = 0
