@@ -10,13 +10,20 @@ class Game:
 
         '''
             Game Modes
-            0 - Selection Mode
-            1 - Active Mode
+            0 - Check Mode
+            1 - Selection Mode
+            2 - Active Mode
+            3 - End Mode
         '''
         self.mode = 0
         self.player_turn = 1
 
     def update(self):
+        if self.mode == 0:
+            print('Mode 0')
+            if self.board.find_valid_pieces(self.player_turn):
+                self.mode = 1
+                print("Mode 1")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -25,21 +32,22 @@ class Game:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
-                # selection mode
-                if self.mode == 0:
-                    if self.board.selection_mode(mouse_x, mouse_y, self.player_turn):
-                        self.mode = 1
-                        print("Mode 1")
-
                 if self.mode == 1:
-                    if self.board.find_valid_moves(self.player_turn):
+                    if self.board.selection_mode(mouse_x, mouse_y, self.player_turn):
                         self.mode = 2
                         print("Mode 2")
+
+                if self.mode == 2:
+                    self.board.valid_pieces=[]
+                    if self.board.find_valid_moves(self.player_turn):
+                        self.mode = 3
+                        print("Mode 3")
                     else:
                         self.mode = 0
+#                         self.mode = 1
                         print("Mode 0")
 
-                elif self.mode == 2:
+                elif self.mode == 3:
                     if self.board.move_piece(mouse_x, mouse_y):
                         self.mode = 0
                         self.player_turn = -1*self.player_turn

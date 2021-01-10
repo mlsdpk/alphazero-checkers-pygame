@@ -23,11 +23,13 @@ class Board:
             'BLACK': (0, 0, 0),
             'GREY': (150, 150, 150),
             'GREEN': (0, 255, 0),
-            'LGREEN': (144, 238, 144)
+            'LGREEN': (144, 238, 144),
+            'YELLOW': (255, 255, 0)
         }
 
-        self.init_grid()
 
+        self.init_grid()
+        self.valid_pieces = []
         self.selected_piece = None
         self.opponent_piece_eaten = {} # row, col
 
@@ -42,33 +44,74 @@ class Board:
 
         selected_row, selected_col = mouse_y//80, mouse_x//80
 
-        # if row,col is outside of board
-        if selected_row < 0 or selected_row > 7 or selected_col < 0 or selected_col > 7:
-            return False
+#         # if row,col is outside of board
+#         if selected_row < 0 or selected_row > 7 or selected_col < 0 or selected_col > 7:
+#             return False
 
-        # if no piece in grid
-        if self.grid[selected_row][selected_col] == 0:
-            return False
+#         # if no piece in grid
+#         if self.grid[selected_row][selected_col] == 0:
+#             return False
 
-        # if selected opponent's piece
-        if self.grid[selected_row][selected_col].player != player_turn:
-            return False
+#         # if selected opponent's piece
+#         if self.grid[selected_row][selected_col].player != player_turn:
+#             return False
+        if (selected_row, selected_col) in self.valid_pieces:
+            self.grid[selected_row][selected_col].selected = True
+            self.selected_piece = (selected_row, selected_col)
+            return True
 
-        self.grid[selected_row][selected_col].selected = True
-        self.selected_piece = (selected_row, selected_col)
+    def find_valid_pieces(self, player_turn):
+        force_captures = []
+        free_moves = []
+        
+        for row in range(len(self.grid)):
+            for col in range(len(self.grid)):
+                if not isinstance(self.grid[row][col], Piece):
+                    continue
+                if self.grid[row][col].player != player_turn:
+                    continue
+        
+                left_grid_row, left_grid_col = row+player_turn, col-1
+                right_grid_row, right_grid_col = row+player_turn, col+1
+                
+                Left = False
+                Right = False
+                if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
+                    if self.grid[left_grid_row][left_grid_col] == 0:
+                        Left = True
+                
+                if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
+                    if self.grid[right_grid_row][right_grid_col] == 0:
+                        Right = True
+                        
+                if Left and Right:        
+                    free_moves.append((row,col))
+                    continue 
+                elif Left or Right:
+                    free_moves.append((row,col))
 
-        return True
-
-    def find_valid_moves(self, player_turn):
-
-        curr_row, curr_col = self.selected_piece
-
+                self.find_valid_moves(player_turn, row, col)                
+                if len(self.opponent_piece_eaten)>0:
+                    force_captures.append((row,col))
+                self.opponent_piece_eaten = {}
+                             
+        self.valid_pieces = force_captures if (len(force_captures)>0) else free_moves
+#         print(self.valid_pieces)
+        return (len(self.valid_pieces)>0)
+    
+    def find_valid_moves(self, player_turn, row= None , col= None):
+        
+        if row is not None and col is not None:
+            curr_row, curr_col = row, col
+        else:
+            curr_row, curr_col = self.selected_piece
+        
         # decide valid grids based on player turn
         left_grid_row, left_grid_col = curr_row+player_turn, curr_col-1
         right_grid_row, right_grid_col = curr_row+player_turn, curr_col+1
 
         # check to make sure between boundaries
-        if left_grid_row >= 0 and left_grid_col <= 7 and left_grid_col >= 0:
+        if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col <= 7 and left_grid_col >= 0:
 
             if isinstance(self.grid[left_grid_row][left_grid_col], Piece):
                 left_grid_row_, left_grid_col_ = left_grid_row+player_turn, left_grid_col -1
@@ -80,7 +123,7 @@ class Board:
                 self.grid[curr_row][curr_col].valid_grids.append((left_grid_row, left_grid_col))
 
         # check to make sure between boundaries
-        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col <= 7:
+        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_row <= 7 and right_grid_col <= 7:
 
             if isinstance(self.grid[right_grid_row][right_grid_col], Piece):
                 right_grid_row_, right_grid_col_ = right_grid_row+player_turn, right_grid_col +1
@@ -103,11 +146,12 @@ class Board:
 
         if len(self.grid[curr_row][curr_col].valid_grids) > 0:
             return True
-        else:
+        elif self.selected_piece is not None:
             self.grid[self.selected_piece[0]][self.selected_piece[1]].selected = False
             self.selected_piece = None
             return False
-
+        else:
+            return False
     def move_piece(self, mouse_x, mouse_y):
 
         selected_row, selected_col = mouse_y//80, mouse_x//80
@@ -184,3 +228,13 @@ class Board:
             for x, y in self.grid[self.selected_piece[0]][self.selected_piece[1]].valid_grids:
                 pygame.draw.rect(screen, self.colors['LGREEN'],
                     (y*self.grid_size, x*self.grid_size, self.grid_size, self.grid_size))
+                
+        if len(self.valid_pieces)>0:
+            for r,c in self.valid_pieces:
+                pygame.draw.rect(screen, self.colors['YELLOW'],
+                    (c*self.grid_size, r*self.grid_size, self.grid_size, self.grid_size))
+                
+                pygame.draw.circle(screen,
+                    self.colors['WHITE'] if player_turn == 1 else self.colors['BLACK'],
+                    (c*self.grid_size + self.grid_size/2, r*self.grid_size + self.grid_size/2),self.grid_size/3
+                )
