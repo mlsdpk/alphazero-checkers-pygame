@@ -31,7 +31,9 @@ class Board:
         self.init_grid()
         self.valid_pieces = []
         self.selected_piece = None
-        self.opponent_piece_eaten = {}  # row, col
+        self.piece_set = None
+        self.piece_free_grids = None
+        self.capture_pieces = None
 
     def init_grid(self):
         for row in range(len(self.grid)):
@@ -44,8 +46,9 @@ class Board:
 
     def selection_mode(self, mouse_x, mouse_y, player_turn):
 
-        selected_row, selected_col = mouse_y // 80, mouse_x // 80
-        
+        selected_row, selected_col = int(mouse_y // self.grid_size), int(
+            mouse_x // self.grid_size)
+
         if (selected_row, selected_col) in self.valid_pieces:
             self.grid[selected_row][selected_col].selected = True
             self.selected_piece = (selected_row, selected_col)
@@ -83,77 +86,33 @@ class Board:
 
                 self.find_valid_moves(player_turn, row, col)
                 self.grid[row][col].valid_grids = []
-                if len(self.opponent_piece_eaten) > 0:
+
+                if len(self.capture_pieces) > 0:
                     force_captures.append((row, col))
-                self.opponent_piece_eaten = {}
 
         self.valid_pieces = force_captures if (
             len(force_captures) > 0) else free_moves
-        #         print(self.valid_pieces)
         return (len(self.valid_pieces) > 0)
 
     def find_valid_moves(self, player_turn, row=None, col=None):
 
-        if row is not None and col is not None:
-            curr_row, curr_col = row, col
-        else:
-            curr_row, curr_col = self.selected_piece
+        curr_row, curr_col = (
+            row,
+            col) if row is not None and col is not None else self.selected_piece
 
-        # decide valid grids based on player turn
-        left_grid_row, left_grid_col = curr_row + player_turn, curr_col - 1
-        right_grid_row, right_grid_col = curr_row + player_turn, curr_col + 1
+        # set is used here to avoid addition of same piece multiple times
+        self.piece_set = {(curr_row, curr_col)}
+        self.piece_free_grids = []
 
-        # check to make sure between boundaries
-        if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col <= 7 and left_grid_col >= 0:
+        # dict - {(after_captured_grid): [(capture_piece), (parent_grid)]}
+        self.capture_pieces = {}
 
-            if isinstance(self.grid[left_grid_row][left_grid_col], Piece):
-                left_grid_row_, left_grid_col_ = left_grid_row + player_turn, left_grid_col - 1
-                if left_grid_row_ >= 0 and left_grid_col_ >= 0 and left_grid_col_ <= 7 and (
-                        self.grid[left_grid_row][left_grid_col].player !=
-                        player_turn) and (
-                            self.grid[left_grid_row_][left_grid_col_] == 0):
-                    self.grid[curr_row][curr_col].valid_grids.append(
-                        (left_grid_row_, left_grid_col_))
-                    self.opponent_piece_eaten['left'] = [
-                        left_grid_row, left_grid_col, left_grid_row_,
-                        left_grid_col_
-                    ]
+        # recursively find valid moves
+        self.find_valid_moves_recursive(player_turn)
 
-            else:
-                self.grid[curr_row][curr_col].valid_grids.append(
-                    (left_grid_row, left_grid_col))
-
-        # check to make sure between boundaries
-        if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_row <= 7 and right_grid_col <= 7:
-
-            if isinstance(self.grid[right_grid_row][right_grid_col], Piece):
-                right_grid_row_, right_grid_col_ = right_grid_row + player_turn, right_grid_col + 1
-                if right_grid_row_ <= 7 and right_grid_col_ >= 0 and right_grid_col_ <= 7 and (
-                        self.grid[right_grid_row][right_grid_col].player !=
-                        player_turn) and (
-                            self.grid[right_grid_row_][right_grid_col_] == 0):
-                    self.grid[curr_row][curr_col].valid_grids.append(
-                        (right_grid_row_, right_grid_col_))
-                    self.opponent_piece_eaten['right'] = [
-                        right_grid_row, right_grid_col, right_grid_row_,
-                        right_grid_col_
-                    ]
-
-            else:
-                self.grid[curr_row][curr_col].valid_grids.append(
-                    (right_grid_row, right_grid_col))
-
-        if 'left' in self.opponent_piece_eaten and 'right' not in self.opponent_piece_eaten:
-            print("Left side exist and right not")
-            self.grid[curr_row][curr_col].valid_grids = [
-                self.grid[curr_row][curr_col].valid_grids[0]
-            ]
-
-        if 'right' in self.opponent_piece_eaten and 'left' not in self.opponent_piece_eaten:
-            print("Right side exist and left not")
-            self.grid[curr_row][curr_col].valid_grids = [
-                self.grid[curr_row][curr_col].valid_grids[-1]
-            ]
+        self.grid[curr_row][curr_col].valid_grids = [
+            *self.capture_pieces
+        ] if len(self.capture_pieces) > 0 else self.piece_free_grids
 
         if len(self.grid[curr_row][curr_col].valid_grids) > 0:
             return True
@@ -162,15 +121,98 @@ class Board:
                 self.selected_piece[1]].selected = False
             self.selected_piece = None
             return False
+
+        return False
+
+    def find_valid_moves_recursive(self, player_turn):
+        # base case
+        if len(self.piece_set) == 0:
+            return True
         else:
-            return False
+            # takeout random piece from set
+            curr_row, curr_col = self.piece_set.pop()
+
+            # find corner piece locations of that piece
+            left_grid_row, left_grid_col = curr_row + player_turn, curr_col - 1
+            right_grid_row, right_grid_col = curr_row + player_turn, curr_col + 1
+
+            # check to make sure between boundaries (left)
+            if self.is_between_boundaries(left_grid_row, left_grid_col):
+                # if it is free space, add to valid positions
+                if self.is_free_space(left_grid_row, left_grid_col):
+                    self.piece_free_grids.append((left_grid_row, left_grid_col))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(left_grid_row, left_grid_col,
+                                               player_turn):
+                        # find new left piece
+                        new_left_grid_row, new_left_grid_col = left_grid_row + player_turn, left_grid_col - 1
+
+                        # check to make sure between boundaries (new left)
+                        if self.is_between_boundaries(new_left_grid_row,
+                                                      new_left_grid_col):
+                            # if another grid is free, we can move to there
+                            if self.is_free_space(new_left_grid_row,
+                                                  new_left_grid_col):
+                                # append new grid as moved location (key) and store capture piece and parent (value)
+                                self.capture_pieces[(new_left_grid_row,
+                                                     new_left_grid_col)] = [
+                                                         (left_grid_row,
+                                                          left_grid_col),
+                                                         (curr_row, curr_col)
+                                                     ]
+                                # append new piece to piece set for further exploration
+                                self.piece_set.add(
+                                    (new_left_grid_row, new_left_grid_col))
+
+            # check to make sure between boundaries (right)
+            if self.is_between_boundaries(right_grid_row, right_grid_col):
+                # if it is free space, add to valid positions
+                if self.is_free_space(right_grid_row, right_grid_col):
+                    self.piece_free_grids.append(
+                        (right_grid_row, right_grid_col))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(right_grid_row, right_grid_col,
+                                               player_turn):
+                        # find new left piece
+                        new_right_grid_row, new_right_grid_col = right_grid_row + player_turn, right_grid_col + 1
+
+                        # check to make sure between boundaries (new right)
+                        if self.is_between_boundaries(new_right_grid_row,
+                                                      new_right_grid_col):
+                            # if another piece is free
+                            if self.is_free_space(new_right_grid_row,
+                                                  new_right_grid_col):
+                                # append new grid as moved location (key) and store capture piece and parent (value)
+                                self.capture_pieces[(new_right_grid_row,
+                                                     new_right_grid_col)] = [
+                                                         (right_grid_row,
+                                                          right_grid_col),
+                                                         (curr_row, curr_col)
+                                                     ]
+                                # append new piece to piece set for further exploration
+                                self.piece_set.add(
+                                    (new_right_grid_row, new_right_grid_col))
+
+            return self.find_valid_moves_recursive(player_turn)
+
+    def is_between_boundaries(self, row, col):
+        return row >= 0 and row <= 7 and col >= 0 and col <= 7
+
+    def is_free_space(self, row, col):
+        return self.grid[row][col] == 0
+
+    def is_same_player(self, row, col, player_turn):
+        return self.grid[row][col].player == player_turn
 
     def move_piece(self, mouse_x, mouse_y):
 
-        selected_row, selected_col = mouse_y // 80, mouse_x // 80
+        selected_row, selected_col = int(mouse_y // self.grid_size), int(
+            mouse_x // self.grid_size)
 
         # if row,col is outside of board
-        if selected_row < 0 or selected_row > 7 or selected_col < 0 or selected_col > 7:
+        if not self.is_between_boundaries(selected_row, selected_col):
             return False
 
         if (selected_row, selected_col) in self.grid[self.selected_piece[0]][
@@ -184,17 +226,15 @@ class Board:
                 self.selected_piece[0]][self.selected_piece[1]]
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
 
-            # Remove eaten Piece
-            sides = ['left', 'right']
-            for side in sides:
-                if side in self.opponent_piece_eaten:
-                    if (selected_row == self.opponent_piece_eaten[side][2]
-                       ) and (selected_col
-                              == self.opponent_piece_eaten[side][3]):
-                        print(f"Eating {side} Side of piece.")
-                        self.grid[self.opponent_piece_eaten[side][0]][
-                            self.opponent_piece_eaten[side][1]] = 0
-            self.opponent_piece_eaten = {}
+            while (selected_row, selected_col) in self.capture_pieces:
+
+                capture_piece = self.capture_pieces[(selected_row,
+                                                     selected_col)][0]
+                self.grid[capture_piece[0]][capture_piece[1]] = 0
+
+                selected_row, selected_col = self.capture_pieces[(
+                    selected_row, selected_col)][1]
+
             self.selected_piece = None
             return True
 
@@ -204,7 +244,6 @@ class Board:
             self.grid[self.selected_piece[0]][
                 self.selected_piece[1]].selected = False
             self.selected_piece = None
-            self.opponent_piece_eaten = {}
             return False
 
     # rendering stuffs
