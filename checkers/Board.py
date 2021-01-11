@@ -22,10 +22,12 @@ class Board:
         self.colors = {
             'WHITE': (255, 255, 255),
             'BLACK': (0, 0, 0),
+            'BLUE': (0, 0, 255),
             'GREY': (150, 150, 150),
             'GREEN': (0, 255, 0),
             'LGREEN': (144, 238, 144),
-            'YELLOW': (255, 255, 0)
+            'YELLOW': (255, 255, 0),
+            'RED': (255, 0, 0)
         }
 
         self.init_grid()
@@ -165,6 +167,22 @@ class Board:
         else:
             return False
 
+    def make_kings_if_any(self, player_turn):
+        for row in range(len(self.grid)):
+            for col in range(len(self.grid)):
+                if not isinstance(self.grid[row][col], Piece):
+                    continue
+                if self.grid[row][col].player != player_turn:
+                    continue
+
+                # check if a piece can become a king and if so, make one
+                if player_turn == -1:
+                    if self.grid[row][col].position[0] == 0:
+                        self.grid[row][col].status = 'king'
+                elif player_turn == 1:
+                    if self.grid[row][col].position[0] == 7:
+                        self.grid[row][col].status = 'king'
+
     def move_piece(self, mouse_x, mouse_y):
 
         selected_row, selected_col = mouse_y // 80, mouse_x // 80
@@ -182,6 +200,10 @@ class Board:
                 self.selected_piece[1]].selected = False
             self.grid[selected_row][selected_col] = self.grid[
                 self.selected_piece[0]][self.selected_piece[1]]
+            
+            # update the position attribute of the piece
+            self.grid[selected_row][selected_col].position = (selected_row, selected_col)
+            
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
 
             # Remove eaten Piece
@@ -192,8 +214,11 @@ class Board:
                        ) and (selected_col
                               == self.opponent_piece_eaten[side][3]):
                         print(f"Eating {side} Side of piece.")
+                            
                         self.grid[self.opponent_piece_eaten[side][0]][
                             self.opponent_piece_eaten[side][1]] = 0
+                        
+
             self.opponent_piece_eaten = {}
             self.selected_piece = None
             return True
@@ -228,14 +253,15 @@ class Board:
 
                     if self.grid[row][col].player == 1:
                         color = self.colors['WHITE']
-                    elif self.grid[row][col].player == -1:
+                    
+                    if self.grid[row][col].player == -1:
                         color = self.colors['BLACK']
 
                     pygame.draw.circle(
                         screen, color,
                         (col * self.grid_size + self.grid_size / 2,
                          row * self.grid_size + self.grid_size / 2),
-                        self.grid_size / 3)
+                        self.grid_size / 3, draw_top_right = self.grid[row][col].status == 'king')
 
         if self.selected_piece is not None:
             pygame.draw.rect(screen, self.colors['LGREEN'],
@@ -248,7 +274,7 @@ class Board:
                 if player_turn == 1 else self.colors['BLACK'],
                 (self.selected_piece[1] * self.grid_size + self.grid_size / 2,
                  self.selected_piece[0] * self.grid_size + self.grid_size / 2),
-                self.grid_size / 3)
+                self.grid_size / 3, draw_top_right = self.grid[self.selected_piece[0]][self.selected_piece[1]].status == 'king')
 
             for x, y in self.grid[self.selected_piece[0]][
                     self.selected_piece[1]].valid_grids:
@@ -267,4 +293,4 @@ class Board:
                     if player_turn == 1 else self.colors['BLACK'],
                     (c * self.grid_size + self.grid_size / 2,
                      r * self.grid_size + self.grid_size / 2),
-                    self.grid_size / 3)
+                    self.grid_size / 3, draw_top_right = self.grid[r][c].status == 'king')

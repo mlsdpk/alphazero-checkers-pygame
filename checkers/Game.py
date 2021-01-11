@@ -46,11 +46,11 @@ class Game:
                         print("Mode 3")
                     else:
                         self.mode = 0
-                        #                         self.mode = 1
                         print("Mode 0")
 
                 elif self.mode == 3:
                     if self.board.move_piece(mouse_x, mouse_y):
+                        self.board.make_kings_if_any(self.player_turn)
                         self.mode = 0
                         self.player_turn = -1 * self.player_turn
                         print("Mode 0")
