@@ -31,7 +31,9 @@ class Board:
         self.init_grid()
         self.valid_pieces = []
         self.selected_piece = None
-        self.opponent_piece_eaten = {}  # row, col
+        self.piece_set = None
+        self.piece_free_grids = None
+        self.capture_pieces = None
 
     def init_grid(self):
         for row in range(len(self.grid)):
@@ -87,7 +89,6 @@ class Board:
 
                 if len(self.capture_pieces) > 0:
                     force_captures.append((row, col))
-                self.opponent_piece_eaten = {}
 
         self.valid_pieces = force_captures if (
             len(force_captures) > 0) else free_moves
@@ -243,7 +244,6 @@ class Board:
             self.grid[self.selected_piece[0]][
                 self.selected_piece[1]].selected = False
             self.selected_piece = None
-            self.opponent_piece_eaten = {}
             return False
 
     # rendering stuffs
