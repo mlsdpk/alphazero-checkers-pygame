@@ -21,10 +21,9 @@ class Game:
 
     def update(self):
         if self.mode == 0:
-            print('Mode 0')
+            print('Entering Mode 0')
             if self.board.find_valid_pieces(self.player_turn):
                 self.mode = 1
-                print("Mode 1")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -34,29 +33,27 @@ class Game:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
                 if self.mode == 1:
+                    print("Entering Mode 1")
                     if self.board.selection_mode(mouse_x, mouse_y,
                                                  self.player_turn):
                         self.mode = 2
-                        print("Mode 2")
 
                 if self.mode == 2:
+                    print("Entering Mode 2")
                     self.board.valid_pieces = []
                     if self.board.find_valid_moves(self.player_turn):
                         self.mode = 3
-                        print("Mode 3")
                     else:
                         self.mode = 0
-                        print("Mode 0")
 
                 elif self.mode == 3:
+                    print("Entering Mode 3")
                     if self.board.move_piece(mouse_x, mouse_y):
                         self.board.make_kings_if_any(self.player_turn)
                         self.mode = 0
                         self.player_turn = -1 * self.player_turn
-                        print("Mode 0")
                     else:
                         self.mode = 0
-                        print("Mode 0")
 
     def render(self):
 
