@@ -66,31 +66,74 @@ class Board:
                     continue
                 if self.grid[row][col].player != player_turn:
                     continue
+                
+                if self.grid[row][col].status == 'king':
+                    lft_row_front, lft_col_front = row + player_turn, col - 1
+                    lft_row_back, lft_col_back = row + (player_turn*(-1)), col -1
 
-                left_grid_row, left_grid_col = row + player_turn, col - 1
-                right_grid_row, right_grid_col = row + player_turn, col + 1
+                    rgt_row_front, rgt_col_front = row + player_turn, col + 1
+                    rgt_row_back, rgt_col_back = row + (player_turn*(-1)), col + 1
 
-                Left = False
-                Right = False
-                if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
-                    if self.grid[left_grid_row][left_grid_col] == 0:
-                        Left = True
+                    front_left = False
+                    back_left = False
+                    front_right = False 
+                    back_right = False
 
-                if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
-                    if self.grid[right_grid_row][right_grid_col] == 0:
-                        Right = True
+                    if self.is_between_boundaries(lft_row_front, lft_col_front):
+                        if self.grid[lft_row_front][ lft_col_front] == 0:
+                            front_left = True
+                    
+                    if self.is_between_boundaries(lft_row_back, lft_col_back):
+                        if self.grid[lft_row_back][lft_col_back] == 0:
+                            back_left = True
+                    
+                    if self.is_between_boundaries(rgt_row_front, rgt_col_front):
+                        if self.grid[rgt_row_front][rgt_col_front] == 0:
+                            front_right = True
+                    
+                    if self.is_between_boundaries(rgt_row_back, rgt_col_back):
+                        if self.grid[rgt_row_back][rgt_col_back] == 0:
+                            back_right = True
+                    
+                    if front_left and back_left and front_right and back_right:
+                        free_moves.append((row, col))
+                        continue
 
-                if Left and Right:
-                    free_moves.append((row, col))
-                    continue
-                elif Left or Right:
-                    free_moves.append((row, col))
+                    elif front_left or back_left or front_right or back_right:
+                        free_moves.append((row, col))
+                    
+                    self.find_valid_moves(player_turn, row, col)
+                    self.grid[row][col].valid_grids = []
 
-                self.find_valid_moves(player_turn, row, col)
-                self.grid[row][col].valid_grids = []
+                    if len(self.capture_pieces) > 0:
+                        force_captures.append((row, col))
 
-                if len(self.capture_pieces) > 0:
-                    force_captures.append((row, col))
+                elif self.grid[row][col].status == 'man':
+                    left_grid_row, left_grid_col = row + player_turn, col - 1
+                    right_grid_row, right_grid_col = row + player_turn, col + 1
+
+                    Left = False
+                    Right = False
+
+                    if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
+                        if self.grid[left_grid_row][left_grid_col] == 0:
+                            Left = True
+
+                    if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
+                        if self.grid[right_grid_row][right_grid_col] == 0:
+                            Right = True
+
+                    if Left and Right:
+                        free_moves.append((row, col))
+                        continue
+                    elif Left or Right:
+                        free_moves.append((row, col))
+
+                    self.find_valid_moves(player_turn, row, col)
+                    self.grid[row][col].valid_grids = []
+
+                    if len(self.capture_pieces) > 0:
+                        force_captures.append((row, col))
 
         self.valid_pieces = force_captures if (
             len(force_captures) > 0) else free_moves
@@ -110,7 +153,10 @@ class Board:
         self.capture_pieces = {}
 
         # recursively find valid moves
-        self.find_valid_moves_recursive(player_turn)
+        if self.grid[curr_row][curr_col].status == 'king':
+            self.find_valid_moves_recursive_king(player_turn)
+        elif self.grid[curr_row][curr_col].status == 'man':
+            self.find_valid_moves_recursive(player_turn)
 
         self.grid[curr_row][curr_col].valid_grids = [
             *self.capture_pieces
@@ -198,6 +244,143 @@ class Board:
                                     (new_right_grid_row, new_right_grid_col))
 
             return self.find_valid_moves_recursive(player_turn)
+
+    def find_valid_moves_recursive_king(self, player_turn):
+        # base case
+        if len(self.piece_set) == 0:
+            return True
+        else:
+            print(self.piece_set)
+            # takeout random piece from set
+            curr_row, curr_col = self.piece_set.pop()
+
+            # find corner piece locations of that piece
+            lft_row_front, lft_col_front = curr_row + player_turn, curr_col - 1
+            lft_row_back, lft_col_back = curr_row + (player_turn*(-1)), curr_col -1
+
+            rgt_row_front, rgt_col_front = curr_row + player_turn, curr_col + 1
+            rgt_row_back, rgt_col_back = curr_row + (player_turn*(-1)), curr_col + 1
+            #     print(prv_pos)
+            
+            # check to make sure between boundaries (left)
+            if self.is_between_boundaries(lft_row_front, lft_col_front):
+                # if it is free space, add to valid positions
+                if self.is_free_space(lft_row_front, lft_col_front):
+                    self.piece_free_grids.append((lft_row_front, lft_col_front))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(lft_row_front, lft_col_front,
+                                               player_turn):
+                        # find new left piece
+                        new_lft_row_front, new_lft_col_front = lft_row_front + player_turn, lft_col_front - 1
+
+                        # check to make sure between boundaries (new left)
+                        if self.is_between_boundaries(new_lft_row_front,
+                                                      new_lft_col_front):
+                            # if another grid is free, we can move to there
+                            if self.is_free_space(new_lft_row_front,
+                                                  new_lft_col_front):
+                                if (new_lft_row_front, new_lft_col_front) not in self.capture_pieces:
+                                    # append new piece to piece set for further exploration
+                                    self.piece_set.add(
+                                        (new_lft_row_front, new_lft_col_front))
+                                    # append new grid as moved location (key) and store capture piece and parent (value)
+                                    self.capture_pieces[(new_lft_row_front,
+                                                        new_lft_col_front)] = [
+                                                            (lft_row_front,
+                                                            lft_col_front),
+                                                            (curr_row, curr_col)
+                                                        ]
+
+            if self.is_between_boundaries(lft_row_back, lft_col_back):
+                # if it is free space, add to valid positions
+                if self.is_free_space(lft_row_back, lft_col_back):
+                    self.piece_free_grids.append((lft_row_back, lft_col_back))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(lft_row_back, lft_col_back,
+                                               player_turn):
+                        # find new left piece
+                        new_lft_row_back, new_lft_col_back = lft_row_back + (player_turn * (-1)), lft_col_back - 1
+
+                        # check to make sure between boundaries (new left)
+                        if self.is_between_boundaries(new_lft_row_back,
+                                                      new_lft_col_back):
+                            # if another grid is free, we can move to there
+                            if self.is_free_space(new_lft_row_back,
+                                                  new_lft_col_back):
+                                if (new_lft_row_back, new_lft_col_back) not in self.capture_pieces:
+                                    # append new piece to piece set for further exploration
+                                    self.piece_set.add(
+                                        (new_lft_row_back, new_lft_col_back))
+                                    # append new grid as moved location (key) and store capture piece and parent (value)
+                                    self.capture_pieces[(new_lft_row_back,
+                                                        new_lft_col_back)] = [
+                                                            (lft_row_back,
+                                                            lft_col_back),
+                                                            (curr_row, curr_col)
+                                                     ]
+
+            if self.is_between_boundaries(rgt_row_back, rgt_col_back):
+                # if it is free space, add to valid positions
+                if self.is_free_space(rgt_row_back, rgt_col_back):
+                    self.piece_free_grids.append((rgt_row_back, rgt_col_back))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(rgt_row_back, rgt_col_back,
+                                               player_turn):
+                        # find new left piece
+                        new_rgt_row_back, new_rgt_col_back = rgt_row_back + (player_turn * (-1)), rgt_col_back + 1
+
+                        # check to make sure between boundaries (new left)
+                        if self.is_between_boundaries(new_rgt_row_back,
+                                                      new_rgt_col_back):
+                            # if another grid is free, we can move to there
+                            if self.is_free_space(new_rgt_row_back,
+                                                  new_rgt_col_back):
+                                if (new_rgt_row_back, new_rgt_col_back) not in self.capture_pieces:
+                                    # append new piece to piece set for further exploration
+                                    self.piece_set.add(
+                                    (new_rgt_row_back, new_rgt_col_back))
+                                    # append new grid as moved location (key) and store capture piece and parent (value)
+                                    self.capture_pieces[(new_rgt_row_back,
+                                                        new_rgt_col_back)] = [
+                                                            (rgt_row_back,
+                                                            rgt_col_back),
+                                                            (curr_row, curr_col)
+                                                        ]
+
+            # check to make sure between boundaries (right)
+            if self.is_between_boundaries(rgt_row_front, rgt_col_front):
+                # if it is free space, add to valid positions
+                if self.is_free_space(rgt_row_front, rgt_col_front):
+                    self.piece_free_grids.append((rgt_row_front, rgt_col_front))
+                else:
+                    # else, only explore further if it's opponent piece
+                    if not self.is_same_player(rgt_row_front, rgt_col_front,
+                                               player_turn):
+                        # find new left piece
+                        new_rgt_row_front, new_rgt_col_front = rgt_row_front + player_turn, rgt_col_front + 1
+
+                        # check to make sure between boundaries (new left)
+                        if self.is_between_boundaries(new_rgt_row_front,
+                                                      new_rgt_col_front):
+                            # if another grid is free, we can move to there
+                            if self.is_free_space(new_rgt_row_front,
+                                                  new_rgt_col_front):
+                                if (new_rgt_row_front, new_rgt_col_front) not in self.capture_pieces:
+                                    # append new piece to piece set for further exploration
+                                    self.piece_set.add(
+                                    (new_rgt_row_front, new_rgt_col_front))
+                                    # append new grid as moved location (key) and store capture piece and parent (value)
+                                    self.capture_pieces[(new_rgt_row_front,
+                                                        new_rgt_col_front)] = [
+                                                            (rgt_row_front,
+                                                            rgt_col_front),
+                                                            (curr_row, curr_col)
+                                                        ]
+
+        return self.find_valid_moves_recursive_king(player_turn)
 
     def is_between_boundaries(self, row, col):
         return row >= 0 and row <= 7 and col >= 0 and col <= 7
