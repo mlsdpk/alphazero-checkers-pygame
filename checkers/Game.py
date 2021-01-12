@@ -18,12 +18,26 @@ class Game:
         '''
         self.mode = 0
         self.player_turn = 1
+        self.winner = 0
 
     def update(self):
+        if self.board.no_piece_capture >= 100:
+            # Draw
+            print(f"Two players have not been able to capture another piece in 100 moves.\nDraw ")
+            self.__init__(self.SCREEN)
+            self.update()
+
         if self.mode == 0:
             print('Entering Mode 0')
+            print(self.board.no_piece_capture)
             if self.board.find_valid_pieces(self.player_turn):
                 self.mode = 1
+            else:
+                # No valid Piece: Loss
+                self.winner = -1 * self.player_turn
+                print(f"Winner : {self.winner}")
+                self.__init__(self.SCREEN)
+                self.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

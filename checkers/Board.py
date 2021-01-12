@@ -8,16 +8,8 @@ class Board:
     def __init__(self):
         self.width, self.height = pygame.display.get_surface().get_size()
         self.grid_size = self.width / 8
-        self.grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-        ]
+        self.grid = np.zeros((8, 8), dtype=np.uint8)
+        self.grid = self.grid.tolist()
 
         self.colors = {
             'WHITE': (255, 255, 255),
@@ -34,6 +26,7 @@ class Board:
         self.piece_set = None
         self.piece_free_grids = None
         self.capture_pieces = None
+        self.no_piece_capture = 0
 
     def init_grid(self):
         for row in range(len(self.grid)):
@@ -70,11 +63,11 @@ class Board:
 
                 Left = False
                 Right = False
-                if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
+                if self.is_between_boundaries(left_grid_row, left_grid_col):
                     if self.grid[left_grid_row][left_grid_col] == 0:
                         Left = True
 
-                if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
+                if self.is_between_boundaries(right_grid_row, right_grid_col):
                     if self.grid[right_grid_row][right_grid_col] == 0:
                         Right = True
 
@@ -225,6 +218,7 @@ class Board:
             self.grid[selected_row][selected_col] = self.grid[
                 self.selected_piece[0]][self.selected_piece[1]]
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
+            self.no_piece_capture += 1
 
             while (selected_row, selected_col) in self.capture_pieces:
 
@@ -234,6 +228,7 @@ class Board:
 
                 selected_row, selected_col = self.capture_pieces[(
                     selected_row, selected_col)][1]
+                self.no_piece_capture = 0
 
             self.selected_piece = None
             return True
@@ -245,6 +240,15 @@ class Board:
                 self.selected_piece[1]].selected = False
             self.selected_piece = None
             return False
+
+    def decide_winner(self):
+        '''Decide Winner and Draw Cases
+        Return:
+            True if there is winner.
+        '''
+        self.grid
+        return False
+
 
     # rendering stuffs
     def render(self, screen, player_turn):
