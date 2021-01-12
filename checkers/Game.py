@@ -31,7 +31,6 @@ class Game:
 
         if self.mode == 0:
             print('Entering Mode 0')
-            print(self.board.no_piece_capture)
             if self.board.find_valid_pieces(self.player_turn):
                 self.mode = 1
             else:
