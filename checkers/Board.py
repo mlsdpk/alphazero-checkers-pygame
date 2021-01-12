@@ -8,16 +8,7 @@ class Board:
     def __init__(self):
         self.width, self.height = pygame.display.get_surface().get_size()
         self.grid_size = self.width / 8
-        self.grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-        ]
+        self.grid = [[0 for i in range(8)] for j in range(8)]
 
         self.colors = {
             'WHITE': (255, 255, 255),
@@ -152,11 +143,11 @@ class Board:
         # dict - {(after_captured_grid): [(capture_piece), (parent_grid)]}
         self.capture_pieces = {}
 
-        # recursively find valid moves
+        # recursively find valid moves of kings and men
         if self.grid[curr_row][curr_col].status == 'king':
-            self.find_valid_moves_recursive_king(player_turn)
+            self.find_king_valid_moves(player_turn)
         elif self.grid[curr_row][curr_col].status == 'man':
-            self.find_valid_moves_recursive(player_turn)
+            self.find_man_valid_moves(player_turn)
 
         self.grid[curr_row][curr_col].valid_grids = [
             *self.capture_pieces
@@ -172,7 +163,18 @@ class Board:
 
         return False
 
-    def find_valid_moves_recursive(self, player_turn):
+    def find_man_valid_moves(self, player_turn):
+        """ Find the valid moves out of two corner grids at the front a man piece.
+            Attributes which are mutated by this method:
+                self.piece_set, self.capture_pieces, self.piece_free_grids
+
+        Args: 
+            param1: The turn of the player
+        
+        Returns:
+            This function returns itself.
+
+        """
         # base case
         if len(self.piece_set) == 0:
             return True
@@ -243,26 +245,36 @@ class Board:
                                 self.piece_set.add(
                                     (new_right_grid_row, new_right_grid_col))
 
-            return self.find_valid_moves_recursive(player_turn)
+            return self.find_man_valid_moves(player_turn)
 
-    def find_valid_moves_recursive_king(self, player_turn):
+    def find_king_valid_moves(self, player_turn):
+        """      the valid moves out of four corner grids around a king.
+            Attributes which are mutated by this method:
+                self.piece_set, self.capture_pieces, self.piece_free_grids
+            Here the term 'front' and 'back' are regarded from each player's view respectively.
+
+        Args: 
+            param1: The turn of the player
+        
+        Returns:
+            This function returns itself.
+
+        """
         # base case
         if len(self.piece_set) == 0:
             return True
         else:
-            print(self.piece_set)
             # takeout random piece from set
             curr_row, curr_col = self.piece_set.pop()
 
-            # find corner piece locations of that piece
+            # find four corner (diagonal) pieces of the king
             lft_row_front, lft_col_front = curr_row + player_turn, curr_col - 1
             lft_row_back, lft_col_back = curr_row + (player_turn*(-1)), curr_col -1
 
             rgt_row_front, rgt_col_front = curr_row + player_turn, curr_col + 1
             rgt_row_back, rgt_col_back = curr_row + (player_turn*(-1)), curr_col + 1
-            #     print(prv_pos)
             
-            # check to make sure between boundaries (left)
+            # --------- Check the validity of the left front block -------------
             if self.is_between_boundaries(lft_row_front, lft_col_front):
                 # if it is free space, add to valid positions
                 if self.is_free_space(lft_row_front, lft_col_front):
@@ -271,15 +283,16 @@ class Board:
                     # else, only explore further if it's opponent piece
                     if not self.is_same_player(lft_row_front, lft_col_front,
                                                player_turn):
-                        # find new left piece
+                        # find new left front piece
                         new_lft_row_front, new_lft_col_front = lft_row_front + player_turn, lft_col_front - 1
 
-                        # check to make sure between boundaries (new left)
+                        # check to make sure between boundaries (new left front)
                         if self.is_between_boundaries(new_lft_row_front,
                                                       new_lft_col_front):
                             # if another grid is free, we can move to there
                             if self.is_free_space(new_lft_row_front,
                                                   new_lft_col_front):
+                                # check if the new grid has been identified before.
                                 if (new_lft_row_front, new_lft_col_front) not in self.capture_pieces:
                                     # append new piece to piece set for further exploration
                                     self.piece_set.add(
@@ -292,6 +305,7 @@ class Board:
                                                             (curr_row, curr_col)
                                                         ]
 
+            # ----------  Check the validity of the left back block --------------
             if self.is_between_boundaries(lft_row_back, lft_col_back):
                 # if it is free space, add to valid positions
                 if self.is_free_space(lft_row_back, lft_col_back):
@@ -300,15 +314,17 @@ class Board:
                     # else, only explore further if it's opponent piece
                     if not self.is_same_player(lft_row_back, lft_col_back,
                                                player_turn):
-                        # find new left piece
+                        # find new left back piece
                         new_lft_row_back, new_lft_col_back = lft_row_back + (player_turn * (-1)), lft_col_back - 1
 
-                        # check to make sure between boundaries (new left)
+                        # check to make sure between boundaries (new left back)
                         if self.is_between_boundaries(new_lft_row_back,
                                                       new_lft_col_back):
                             # if another grid is free, we can move to there
                             if self.is_free_space(new_lft_row_back,
                                                   new_lft_col_back):
+                                
+                                # check if the new grid has been identified before.
                                 if (new_lft_row_back, new_lft_col_back) not in self.capture_pieces:
                                     # append new piece to piece set for further exploration
                                     self.piece_set.add(
@@ -321,6 +337,7 @@ class Board:
                                                             (curr_row, curr_col)
                                                      ]
 
+            # ---------- Check the validity of the right back block -------------
             if self.is_between_boundaries(rgt_row_back, rgt_col_back):
                 # if it is free space, add to valid positions
                 if self.is_free_space(rgt_row_back, rgt_col_back):
@@ -329,15 +346,17 @@ class Board:
                     # else, only explore further if it's opponent piece
                     if not self.is_same_player(rgt_row_back, rgt_col_back,
                                                player_turn):
-                        # find new left piece
+                        # find new right back piece
                         new_rgt_row_back, new_rgt_col_back = rgt_row_back + (player_turn * (-1)), rgt_col_back + 1
 
-                        # check to make sure between boundaries (new left)
+                        # check to make sure between boundaries (new right back)
                         if self.is_between_boundaries(new_rgt_row_back,
                                                       new_rgt_col_back):
                             # if another grid is free, we can move to there
                             if self.is_free_space(new_rgt_row_back,
                                                   new_rgt_col_back):
+
+                                # check if the new grid has been identified before.
                                 if (new_rgt_row_back, new_rgt_col_back) not in self.capture_pieces:
                                     # append new piece to piece set for further exploration
                                     self.piece_set.add(
@@ -350,7 +369,7 @@ class Board:
                                                             (curr_row, curr_col)
                                                         ]
 
-            # check to make sure between boundaries (right)
+            # ---------- Check the validity of the right front block ------------
             if self.is_between_boundaries(rgt_row_front, rgt_col_front):
                 # if it is free space, add to valid positions
                 if self.is_free_space(rgt_row_front, rgt_col_front):
@@ -380,7 +399,7 @@ class Board:
                                                             (curr_row, curr_col)
                                                         ]
 
-        return self.find_valid_moves_recursive_king(player_turn)
+        return self.find_king_valid_moves(player_turn)
 
     def is_between_boundaries(self, row, col):
         return row >= 0 and row <= 7 and col >= 0 and col <= 7
