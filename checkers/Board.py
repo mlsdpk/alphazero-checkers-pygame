@@ -249,7 +249,6 @@ class Board:
         self.grid
         return False
 
-
     # rendering stuffs
     def render(self, screen, player_turn):
 

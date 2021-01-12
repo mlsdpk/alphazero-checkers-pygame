@@ -23,7 +23,9 @@ class Game:
     def update(self):
         if self.board.no_piece_capture >= 100:
             # Draw
-            print(f"Two players have not been able to capture another piece in 100 moves.\nDraw ")
+            print(
+                f"Two players have not been able to capture another piece in 100 moves.\nDraw "
+            )
             self.__init__(self.SCREEN)
             self.update()
 
