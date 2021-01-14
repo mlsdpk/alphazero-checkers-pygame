@@ -99,7 +99,7 @@ class Board:
                     if len(self.capture_pieces) > 0:
                         force_captures.append((row, col))
 
-                elif self.grid[row][col].status == 'man':
+                elif self.grid[row][col].status == 'man':   
                     left_grid_row, left_grid_col = row + player_turn, col - 1
                     right_grid_row, right_grid_col = row + player_turn, col + 1
 
