@@ -48,7 +48,7 @@ class Game:
 
                 elif self.mode == 3:
                     print("Entering Mode 3")
-                    if self.board.move_piece(mouse_x, mouse_y):
+                    if self.board.move_piece(mouse_x, mouse_y, self.player_turn):
                         self.mode = 0
                         self.player_turn = -1 * self.player_turn
                     else:

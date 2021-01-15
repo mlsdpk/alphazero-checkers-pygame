@@ -4,5 +4,6 @@ class Piece:
 
         self.position = (row, col)
         self.player = player
+        self.status = 'man'
         self.selected = False
         self.valid_grids = []

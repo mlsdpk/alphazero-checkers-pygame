@@ -4,28 +4,20 @@ from .Piece import Piece
 
 
 class Board:
-
     def __init__(self):
         self.width, self.height = pygame.display.get_surface().get_size()
         self.grid_size = self.width / 8
-        self.grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-        ]
+        self.grid = [[0 for i in range(8)] for j in range(8)]
 
         self.colors = {
             'WHITE': (255, 255, 255),
             'BLACK': (0, 0, 0),
+            'BLUE': (0, 0, 255),
             'GREY': (150, 150, 150),
             'GREEN': (0, 255, 0),
             'LGREEN': (144, 238, 144),
-            'YELLOW': (255, 255, 0)
+            'YELLOW': (255, 255, 0),
+            'RED': (255, 0, 0)
         }
 
         self.init_grid()
@@ -38,11 +30,11 @@ class Board:
     def init_grid(self):
         for row in range(len(self.grid)):
             for col in range(len(self.grid)):
-                if (row % 2 == 0 and col % 2 != 0) or (row % 2 != 0 and
-                                                       col % 2 == 0):
+                if (row % 2 == 0 and col % 2 != 0) or (row % 2 != 0
+                                                       and col % 2 == 0):
                     self.grid[row][col] = Piece(
-                        row, col,
-                        1) if row < 3 else Piece(row, col, -1) if row > 4 else 0
+                        row, col, 1) if row < 3 else Piece(
+                            row, col, -1) if row > 4 else 0
 
     def selection_mode(self, mouse_x, mouse_y, player_turn):
 
@@ -65,30 +57,82 @@ class Board:
                 if self.grid[row][col].player != player_turn:
                     continue
 
-                left_grid_row, left_grid_col = row + player_turn, col - 1
-                right_grid_row, right_grid_col = row + player_turn, col + 1
+                if self.grid[row][col].status == 'king':
+                    lft_row_front, lft_col_front = row + player_turn, col - 1
+                    lft_row_back, lft_col_back = row + (player_turn *
+                                                        (-1)), col - 1
 
-                Left = False
-                Right = False
-                if left_grid_row >= 0 and left_grid_row <= 7 and left_grid_col >= 0 and left_grid_col <= 7:
-                    if self.grid[left_grid_row][left_grid_col] == 0:
-                        Left = True
+                    rgt_row_front, rgt_col_front = row + player_turn, col + 1
+                    rgt_row_back, rgt_col_back = row + (player_turn *
+                                                        (-1)), col + 1
 
-                if right_grid_row >= 0 and right_grid_row <= 7 and right_grid_col >= 0 and right_grid_col <= 7:
-                    if self.grid[right_grid_row][right_grid_col] == 0:
-                        Right = True
+                    front_left_empty = False
+                    back_left_empty = False
+                    front_right_empty = False
+                    back_right_empty = False
 
-                if Left and Right:
-                    free_moves.append((row, col))
-                    continue
-                elif Left or Right:
-                    free_moves.append((row, col))
+                    # ----- defining the conditions for grid emptiness -----------
+                    if self.is_between_boundaries(lft_row_front,
+                                                  lft_col_front):
+                        if self.grid[lft_row_front][lft_col_front] == 0:
+                            front_left_empty = True
 
-                self.find_valid_moves(player_turn, row, col)
-                self.grid[row][col].valid_grids = []
+                    if self.is_between_boundaries(lft_row_back, lft_col_back):
+                        if self.grid[lft_row_back][lft_col_back] == 0:
+                            back_left_empty = True
 
-                if len(self.capture_pieces) > 0:
-                    force_captures.append((row, col))
+                    if self.is_between_boundaries(rgt_row_front,
+                                                  rgt_col_front):
+                        if self.grid[rgt_row_front][rgt_col_front] == 0:
+                            front_right_empty = True
+
+                    if self.is_between_boundaries(rgt_row_back, rgt_col_back):
+                        if self.grid[rgt_row_back][rgt_col_back] == 0:
+                            back_right_empty = True
+                    # ----------------------------------------------------
+
+                    # check if the corner grids are empty
+                    if front_left_empty and back_left_empty and front_right_empty and back_right_empty:
+                        free_moves.append((row, col))
+                        continue
+                    elif front_left_empty or back_left_empty or front_right_empty or back_right_empty:
+                        free_moves.append((row, col))
+
+                    self.find_valid_moves(player_turn, row, col)
+
+                    self.grid[row][col].valid_grids = []
+
+                    if len(self.capture_pieces) > 0:
+                        force_captures.append((row, col))
+
+                elif self.grid[row][col].status == 'man':
+                    left_grid_row, left_grid_col = row + player_turn, col - 1
+                    right_grid_row, right_grid_col = row + player_turn, col + 1
+
+                    left_grid_empty = False
+                    right_grid_empty = False
+
+                    if self.is_between_boundaries(left_grid_row,
+                                                  left_grid_col):
+                        if self.grid[left_grid_row][left_grid_col] == 0:
+                            left_grid_empty = True
+
+                    if self.is_between_boundaries(right_grid_row,
+                                                  right_grid_col):
+                        if self.grid[right_grid_row][right_grid_col] == 0:
+                            right_grid_empty = True
+
+                    if left_grid_empty and right_grid_empty:
+                        free_moves.append((row, col))
+                        continue
+                    elif left_grid_empty or right_grid_empty:
+                        free_moves.append((row, col))
+
+                    self.find_valid_moves(player_turn, row, col)
+                    self.grid[row][col].valid_grids = []
+
+                    if len(self.capture_pieces) > 0:
+                        force_captures.append((row, col))
 
         self.valid_pieces = force_captures if (
             len(force_captures) > 0) else free_moves
@@ -97,8 +141,8 @@ class Board:
     def find_valid_moves(self, player_turn, row=None, col=None):
 
         curr_row, curr_col = (
-            row,
-            col) if row is not None and col is not None else self.selected_piece
+            row, col
+        ) if row is not None and col is not None else self.selected_piece
 
         # set is used here to avoid addition of same piece multiple times
         self.piece_set = {(curr_row, curr_col)}
@@ -107,8 +151,9 @@ class Board:
         # dict - {(after_captured_grid): [(capture_piece), (parent_grid)]}
         self.capture_pieces = {}
 
-        # recursively find valid moves
-        self.find_valid_moves_recursive(player_turn)
+        # recursively find valid moves of kings and men
+        player_status = self.grid[curr_row][curr_col].status
+        self.validate_grids_recursively(player_turn, player_status)
 
         self.grid[curr_row][curr_col].valid_grids = [
             *self.capture_pieces
@@ -124,78 +169,150 @@ class Board:
 
         return False
 
-    def find_valid_moves_recursive(self, player_turn):
+    def validate_single_corner_grid(self, selected_row, selected_col,
+                                    corner_row, corner_col, grid_dir,
+                                    player_turn, player_status):
+        """ The function does three things:
+                - checks if a grid is empty, if empty, store that position 
+                  to "self.piece_free_grids"
+                - if its not empty, checks if there is a own piece or enemy
+                  piece in the grid
+                - if enemy piece, it looks for one more grid diagonally
+                - if that grid is empty, store the empty piece position, 
+                  update the "self.caputure_pieces" accordingly.
+                
+                l - left, f - front, b - back, r - right
+
+                Attributes which are mutated by this method:
+                    self.piece_set, self.capture_pieces, self.piece_free_grids
+
+        Args: 
+            param1: The selected (parent) piece row
+            param2: The selected piece col
+            param3: The row of a grid we want to validate, at the corner of the selected piece
+            param4: The col of a grid we want to validate, at the corner of the selected piece
+            param5: The direction of the corner grid from the selected piece.
+            param6: The turn of the player (1 or -1)
+            param7: The status of the player (king or man)
+        
+        Returns:
+            This function returns None but mutates some instance attributes as stated above.
+
+        """
+        if self.is_between_boundaries(corner_row, corner_col):
+            # if it is free space, add to valid positions
+            if self.is_free_space(corner_row, corner_col):
+                self.piece_free_grids.append((corner_row, corner_col))
+            else:
+                # else, only explore further if it's opponent piece
+                if not self.is_same_player(corner_row, corner_col,
+                                           player_turn):
+                    # find new piece
+                    if grid_dir == 'lf':
+                        new_corner_row, new_corner_col = corner_row + player_turn, corner_col - 1
+                    elif grid_dir == 'lb':
+                        new_corner_row, new_corner_col = corner_row + (
+                            -1 * player_turn), corner_col - 1
+                    elif grid_dir == 'rf':
+                        new_corner_row, new_corner_col = corner_row + player_turn, corner_col + 1
+                    elif grid_dir == 'rb':
+                        new_corner_row, new_corner_col = corner_row + (
+                            -1 * player_turn), corner_col + 1
+
+                    # check to make sure between boundaries
+                    if self.is_between_boundaries(new_corner_row,
+                                                  new_corner_col):
+                        # if another grid is free, we can move to there
+                        if self.is_free_space(new_corner_row, new_corner_col):
+                            if player_status == 'king':
+                                if (new_corner_row, new_corner_col
+                                    ) not in self.capture_pieces:
+                                    # append new grid as moved location (key) and store capture piece and parent (value)
+                                    self.capture_pieces[(new_corner_row,
+                                                         new_corner_col)] = [
+                                                             (corner_row,
+                                                              corner_col),
+                                                             (selected_row,
+                                                              selected_col)
+                                                         ]
+                                    # append new piece to piece set for further exploration
+                                    self.piece_set.add(
+                                        (new_corner_row, new_corner_col))
+                            elif player_status == 'man':
+                                self.capture_pieces[(new_corner_row,
+                                                     new_corner_col)] = [
+                                                         (corner_row,
+                                                          corner_col),
+                                                         (selected_row,
+                                                          selected_col)
+                                                     ]
+                                # append new piece to piece set for further exploration
+                                self.piece_set.add(
+                                    (new_corner_row, new_corner_col))
+
+    def validate_grids_recursively(self, player_turn, player_status):
+        """ Find the valid moves at the corner grids of both man and king pieces.
+
+        Args: 
+            param1: The turn of the player
+            param2: The status of the player - "king" or "man"
+        
+        Returns:
+            This function returns itself.
+
+        """
         # base case
         if len(self.piece_set) == 0:
             return True
         else:
-            # takeout random piece from set
-            curr_row, curr_col = self.piece_set.pop()
 
-            # find corner piece locations of that piece
-            left_grid_row, left_grid_col = curr_row + player_turn, curr_col - 1
-            right_grid_row, right_grid_col = curr_row + player_turn, curr_col + 1
+            if player_status == 'man':
+                # takeout random piece from set
+                curr_row, curr_col = self.piece_set.pop()
 
-            # check to make sure between boundaries (left)
-            if self.is_between_boundaries(left_grid_row, left_grid_col):
-                # if it is free space, add to valid positions
-                if self.is_free_space(left_grid_row, left_grid_col):
-                    self.piece_free_grids.append((left_grid_row, left_grid_col))
-                else:
-                    # else, only explore further if it's opponent piece
-                    if not self.is_same_player(left_grid_row, left_grid_col,
-                                               player_turn):
-                        # find new left piece
-                        new_left_grid_row, new_left_grid_col = left_grid_row + player_turn, left_grid_col - 1
+                # find two corner piece at front of man piece
+                left_grid_row, left_grid_col = curr_row + player_turn, curr_col - 1
+                right_grid_row, right_grid_col = curr_row + player_turn, curr_col + 1
 
-                        # check to make sure between boundaries (new left)
-                        if self.is_between_boundaries(new_left_grid_row,
-                                                      new_left_grid_col):
-                            # if another grid is free, we can move to there
-                            if self.is_free_space(new_left_grid_row,
-                                                  new_left_grid_col):
-                                # append new grid as moved location (key) and store capture piece and parent (value)
-                                self.capture_pieces[(new_left_grid_row,
-                                                     new_left_grid_col)] = [
-                                                         (left_grid_row,
-                                                          left_grid_col),
-                                                         (curr_row, curr_col)
-                                                     ]
-                                # append new piece to piece set for further exploration
-                                self.piece_set.add(
-                                    (new_left_grid_row, new_left_grid_col))
+                # validating two grids in front of a "man" piece
+                grids_m = [(left_grid_row, left_grid_col),
+                           (right_grid_row, right_grid_col)]
+                grid_dir = ['lf', 'rf']
 
-            # check to make sure between boundaries (right)
-            if self.is_between_boundaries(right_grid_row, right_grid_col):
-                # if it is free space, add to valid positions
-                if self.is_free_space(right_grid_row, right_grid_col):
-                    self.piece_free_grids.append(
-                        (right_grid_row, right_grid_col))
-                else:
-                    # else, only explore further if it's opponent piece
-                    if not self.is_same_player(right_grid_row, right_grid_col,
-                                               player_turn):
-                        # find new left piece
-                        new_right_grid_row, new_right_grid_col = right_grid_row + player_turn, right_grid_col + 1
+                for i in range(len(grids_m)):
+                    self.validate_single_corner_grid(curr_row, curr_col,
+                                                     grids_m[i][0],
+                                                     grids_m[i][1],
+                                                     grid_dir[i], player_turn,
+                                                     player_status)
 
-                        # check to make sure between boundaries (new right)
-                        if self.is_between_boundaries(new_right_grid_row,
-                                                      new_right_grid_col):
-                            # if another piece is free
-                            if self.is_free_space(new_right_grid_row,
-                                                  new_right_grid_col):
-                                # append new grid as moved location (key) and store capture piece and parent (value)
-                                self.capture_pieces[(new_right_grid_row,
-                                                     new_right_grid_col)] = [
-                                                         (right_grid_row,
-                                                          right_grid_col),
-                                                         (curr_row, curr_col)
-                                                     ]
-                                # append new piece to piece set for further exploration
-                                self.piece_set.add(
-                                    (new_right_grid_row, new_right_grid_col))
+            elif player_status == 'king':
+                # takeout random piece from set
+                curr_row, curr_col = self.piece_set.pop()
 
-            return self.find_valid_moves_recursive(player_turn)
+                lft_row_front, lft_col_front = curr_row + player_turn, curr_col - 1
+                lft_row_back, lft_col_back = curr_row + (
+                    -1 * player_turn), curr_col - 1
+
+                rgt_row_front, rgt_col_front = curr_row + player_turn, curr_col + 1
+                rgt_row_back, rgt_col_back = curr_row + (
+                    -1 * player_turn), curr_col + 1
+
+                # validating four grids around a "king" piece
+                grids_k = [(lft_row_front, lft_col_front),
+                           (lft_row_back, lft_col_back),
+                           (rgt_row_front, rgt_col_front),
+                           (rgt_row_back, rgt_col_back)]
+                grid_dir = ['lf', 'lb', 'rf', 'rb']
+
+                for i in range(len(grids_k)):
+                    self.validate_single_corner_grid(curr_row, curr_col,
+                                                     grids_k[i][0],
+                                                     grids_k[i][1],
+                                                     grid_dir[i], player_turn,
+                                                     player_status)
+
+            return self.validate_grids_recursively(player_turn, player_status)
 
     def is_between_boundaries(self, row, col):
         return row >= 0 and row <= 7 and col >= 0 and col <= 7
@@ -206,7 +323,7 @@ class Board:
     def is_same_player(self, row, col, player_turn):
         return self.grid[row][col].player == player_turn
 
-    def move_piece(self, mouse_x, mouse_y):
+    def move_piece(self, mouse_x, mouse_y, player_turn):
 
         selected_row, selected_col = int(mouse_y // self.grid_size), int(
             mouse_x // self.grid_size)
@@ -224,6 +341,19 @@ class Board:
                 self.selected_piece[1]].selected = False
             self.grid[selected_row][selected_col] = self.grid[
                 self.selected_piece[0]][self.selected_piece[1]]
+
+            # update the position attribute of the piece
+            self.grid[selected_row][selected_col].position = (selected_row,
+                                                              selected_col)
+
+            # make changes on the status of a piece based on its moved position
+            if self.grid[selected_row][selected_col].position[
+                    0] == 0 and player_turn == -1:
+                self.grid[selected_row][selected_col].status = 'king'
+            elif self.grid[selected_row][selected_col].position[
+                    0] == 7 and player_turn == 1:
+                self.grid[selected_row][selected_col].status = 'king'
+
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
 
             while (selected_row, selected_col) in self.capture_pieces:
@@ -267,14 +397,16 @@ class Board:
 
                     if self.grid[row][col].player == 1:
                         color = self.colors['WHITE']
-                    elif self.grid[row][col].player == -1:
+
+                    if self.grid[row][col].player == -1:
                         color = self.colors['BLACK']
 
                     pygame.draw.circle(
-                        screen, color,
-                        (col * self.grid_size + self.grid_size / 2,
-                         row * self.grid_size + self.grid_size / 2),
-                        self.grid_size / 3)
+                        screen,
+                        color, (col * self.grid_size + self.grid_size / 2,
+                                row * self.grid_size + self.grid_size / 2),
+                        self.grid_size / 3,
+                        draw_top_right=self.grid[row][col].status == 'king')
 
         if self.selected_piece is not None:
             pygame.draw.rect(screen, self.colors['LGREEN'],
@@ -283,11 +415,14 @@ class Board:
                               self.grid_size, self.grid_size))
 
             pygame.draw.circle(
-                screen, self.colors['WHITE']
+                screen,
+                self.colors['WHITE']
                 if player_turn == 1 else self.colors['BLACK'],
                 (self.selected_piece[1] * self.grid_size + self.grid_size / 2,
                  self.selected_piece[0] * self.grid_size + self.grid_size / 2),
-                self.grid_size / 3)
+                self.grid_size / 3,
+                draw_top_right=self.grid[self.selected_piece[0]][
+                    self.selected_piece[1]].status == 'king')
 
             for x, y in self.grid[self.selected_piece[0]][
                     self.selected_piece[1]].valid_grids:
@@ -302,8 +437,10 @@ class Board:
                                   self.grid_size, self.grid_size))
 
                 pygame.draw.circle(
-                    screen, self.colors['WHITE']
+                    screen,
+                    self.colors['WHITE']
                     if player_turn == 1 else self.colors['BLACK'],
                     (c * self.grid_size + self.grid_size / 2,
                      r * self.grid_size + self.grid_size / 2),
-                    self.grid_size / 3)
+                    self.grid_size / 3,
+                    draw_top_right=self.grid[r][c].status == 'king')
