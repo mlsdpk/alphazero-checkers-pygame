@@ -21,11 +21,11 @@ class Game:
         self.winner = 0
 
     def update(self):
-        if self.board.no_piece_capture >= 100:
-            # Draw
-            print(
-                f"Two players have not been able to capture another piece in 100 moves.\nDraw "
-            )
+        if (self.board.no_capture_pieces_count >= 100) or (self.board.is_draw):
+            print('Meet the Draw Condition:\
+            \n1. Same Board State for 3 Times\
+            \n2. 100 Moves with no Capture Piece.\
+            \nResult : Draw\nStart New Board.')
             self.__init__(self.SCREEN)
             self.update()
 
@@ -34,9 +34,9 @@ class Game:
             if self.board.find_valid_pieces(self.player_turn):
                 self.mode = 1
             else:
-                # No valid Piece: Loss
-                self.winner = -1 * self.player_turn
-                print(f"Winner : {self.winner}")
+                # No valid move: Loss
+                winner = -1 * self.player_turn
+                print(f"Winner : {winner}")
                 self.__init__(self.SCREEN)
                 self.update()
 
@@ -63,7 +63,8 @@ class Game:
 
                 elif self.mode == 3:
                     print("Entering Mode 3")
-                    if self.board.move_piece(mouse_x, mouse_y):
+                    if self.board.move_piece(mouse_x, mouse_y,
+                                             self.player_turn):
                         self.mode = 0
                         self.player_turn = -1 * self.player_turn
                     else:
