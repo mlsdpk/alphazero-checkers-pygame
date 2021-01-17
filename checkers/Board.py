@@ -4,6 +4,7 @@ from .Piece import Piece
 
 
 class Board:
+
     def __init__(self):
         self.width, self.height = pygame.display.get_surface().get_size()
         self.grid_size = self.width / 8
@@ -30,11 +31,11 @@ class Board:
     def init_grid(self):
         for row in range(len(self.grid)):
             for col in range(len(self.grid)):
-                if (row % 2 == 0 and col % 2 != 0) or (row % 2 != 0
-                                                       and col % 2 == 0):
+                if (row % 2 == 0 and col % 2 != 0) or (row % 2 != 0 and
+                                                       col % 2 == 0):
                     self.grid[row][col] = Piece(
-                        row, col, 1) if row < 3 else Piece(
-                            row, col, -1) if row > 4 else 0
+                        row, col,
+                        1) if row < 3 else Piece(row, col, -1) if row > 4 else 0
 
     def selection_mode(self, mouse_x, mouse_y, player_turn):
 
@@ -72,8 +73,7 @@ class Board:
                     back_right_empty = False
 
                     # ----- defining the conditions for grid emptiness -----------
-                    if self.is_between_boundaries(lft_row_front,
-                                                  lft_col_front):
+                    if self.is_between_boundaries(lft_row_front, lft_col_front):
                         if self.grid[lft_row_front][lft_col_front] == 0:
                             front_left_empty = True
 
@@ -81,8 +81,7 @@ class Board:
                         if self.grid[lft_row_back][lft_col_back] == 0:
                             back_left_empty = True
 
-                    if self.is_between_boundaries(rgt_row_front,
-                                                  rgt_col_front):
+                    if self.is_between_boundaries(rgt_row_front, rgt_col_front):
                         if self.grid[rgt_row_front][rgt_col_front] == 0:
                             front_right_empty = True
 
@@ -112,8 +111,7 @@ class Board:
                     left_grid_empty = False
                     right_grid_empty = False
 
-                    if self.is_between_boundaries(left_grid_row,
-                                                  left_grid_col):
+                    if self.is_between_boundaries(left_grid_row, left_grid_col):
                         if self.grid[left_grid_row][left_grid_col] == 0:
                             left_grid_empty = True
 
@@ -141,8 +139,8 @@ class Board:
     def find_valid_moves(self, player_turn, row=None, col=None):
 
         curr_row, curr_col = (
-            row, col
-        ) if row is not None and col is not None else self.selected_piece
+            row,
+            col) if row is not None and col is not None else self.selected_piece
 
         # set is used here to avoid addition of same piece multiple times
         self.piece_set = {(curr_row, curr_col)}
@@ -205,8 +203,7 @@ class Board:
                 self.piece_free_grids.append((corner_row, corner_col))
             else:
                 # else, only explore further if it's opponent piece
-                if not self.is_same_player(corner_row, corner_col,
-                                           player_turn):
+                if not self.is_same_player(corner_row, corner_col, player_turn):
                     # find new piece
                     if grid_dir == 'lf':
                         new_corner_row, new_corner_col = corner_row + player_turn, corner_col - 1
@@ -226,7 +223,7 @@ class Board:
                         if self.is_free_space(new_corner_row, new_corner_col):
                             if player_status == 'king':
                                 if (new_corner_row, new_corner_col
-                                    ) not in self.capture_pieces:
+                                   ) not in self.capture_pieces:
                                     # append new grid as moved location (key) and store capture piece and parent (value)
                                     self.capture_pieces[(new_corner_row,
                                                          new_corner_col)] = [
@@ -282,9 +279,8 @@ class Board:
                 for i in range(len(grids_m)):
                     self.validate_single_corner_grid(curr_row, curr_col,
                                                      grids_m[i][0],
-                                                     grids_m[i][1],
-                                                     grid_dir[i], player_turn,
-                                                     player_status)
+                                                     grids_m[i][1], grid_dir[i],
+                                                     player_turn, player_status)
 
             elif player_status == 'king':
                 # takeout random piece from set
@@ -308,9 +304,8 @@ class Board:
                 for i in range(len(grids_k)):
                     self.validate_single_corner_grid(curr_row, curr_col,
                                                      grids_k[i][0],
-                                                     grids_k[i][1],
-                                                     grid_dir[i], player_turn,
-                                                     player_status)
+                                                     grids_k[i][1], grid_dir[i],
+                                                     player_turn, player_status)
 
             return self.validate_grids_recursively(player_turn, player_status)
 
