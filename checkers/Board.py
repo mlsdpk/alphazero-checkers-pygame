@@ -177,6 +177,7 @@ class Board:
                                     corner_row, corner_col, grid_dir,
                                     player_turn, player_status):
         """ The function does three things:
+        
                 - checks if a grid is empty, if empty, store that position
                   to "self.piece_free_grids"
                 - if its not empty, checks if there is an own piece or enemy
@@ -354,6 +355,7 @@ class Board:
             if self.grid[selected_row][selected_col].position[
                     0] == 0 and player_turn == -1:
                 self.grid[selected_row][selected_col].status = 'king'
+
                 self.king_side[0] = 1
             elif self.grid[selected_row][selected_col].position[
                     0] == 7 and player_turn == 1:
