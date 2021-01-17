@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from .Piece import Piece
+from collections import deque
 
 
 class Board:
@@ -27,8 +28,14 @@ class Board:
         self.piece_set = None
         self.piece_free_grids = None
         self.capture_pieces = None
+        self.no_capture_pieces_count = 0
+        self.king_side = np.array([0, 0])
+        self.grid_buffer = deque()
+        self.is_draw = False
 
     def init_grid(self):
+        """Initialize(Reset) Grid Board
+        """
         for row in range(len(self.grid)):
             for col in range(len(self.grid)):
                 if (row % 2 == 0 and col % 2 != 0) or (row % 2 != 0 and
@@ -38,7 +45,6 @@ class Board:
                         1) if row < 3 else Piece(row, col, -1) if row > 4 else 0
 
     def selection_mode(self, mouse_x, mouse_y, player_turn):
-
         selected_row, selected_col = int(mouse_y // self.grid_size), int(
             mouse_x // self.grid_size)
 
@@ -171,20 +177,21 @@ class Board:
                                     corner_row, corner_col, grid_dir,
                                     player_turn, player_status):
         """ The function does three things:
-                - checks if a grid is empty, if empty, store that position 
+        
+                - checks if a grid is empty, if empty, store that position
                   to "self.piece_free_grids"
-                - if its not empty, checks if there is a own piece or enemy
+                - if its not empty, checks if there is an own piece or enemy
                   piece in the grid
                 - if enemy piece, it looks for one more grid diagonally
-                - if that grid is empty, store the empty piece position, 
+                - if that grid is empty, store the empty piece position,
                   update the "self.caputure_pieces" accordingly.
-                
+
                 l - left, f - front, b - back, r - right
 
                 Attributes which are mutated by this method:
                     self.piece_set, self.capture_pieces, self.piece_free_grids
 
-        Args: 
+        Args:
             param1: The selected (parent) piece row
             param2: The selected piece col
             param3: The row of a grid we want to validate, at the corner of the selected piece
@@ -192,7 +199,7 @@ class Board:
             param5: The direction of the corner grid from the selected piece.
             param6: The turn of the player (1 or -1)
             param7: The status of the player (king or man)
-        
+
         Returns:
             This function returns None but mutates some instance attributes as stated above.
 
@@ -250,10 +257,10 @@ class Board:
     def validate_grids_recursively(self, player_turn, player_status):
         """ Find the valid moves at the corner grids of both man and king pieces.
 
-        Args: 
+        Args:
             param1: The turn of the player
             param2: The status of the player - "king" or "man"
-        
+
         Returns:
             This function returns itself.
 
@@ -337,6 +344,9 @@ class Board:
             self.grid[selected_row][selected_col] = self.grid[
                 self.selected_piece[0]][self.selected_piece[1]]
 
+            # add 1 move with no capture-pieces
+            self.no_capture_pieces_count += 1
+
             # update the position attribute of the piece
             self.grid[selected_row][selected_col].position = (selected_row,
                                                               selected_col)
@@ -345,9 +355,12 @@ class Board:
             if self.grid[selected_row][selected_col].position[
                     0] == 0 and player_turn == -1:
                 self.grid[selected_row][selected_col].status = 'king'
+
+                self.king_side[0] = 1
             elif self.grid[selected_row][selected_col].position[
                     0] == 7 and player_turn == 1:
                 self.grid[selected_row][selected_col].status = 'king'
+                self.king_side[1] = 1
 
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
 
@@ -360,7 +373,20 @@ class Board:
                 selected_row, selected_col = self.capture_pieces[(
                     selected_row, selected_col)][1]
 
+                # clear no_piece_capture_piece
+                self.no_capture_pieces_count = 0
+
             self.selected_piece = None
+
+            # If both sides have king piece:
+            if self.king_side.all():
+                self.grid_buffer.append(np.array(self.grid))
+                if len(self.grid_buffer) > 8:
+                    if (self.grid_buffer[-1] == self.grid_buffer[0]).all():
+                        self.is_draw = True
+                        print("\nSame Board State for 3 Times...\n")
+                    self.grid_buffer.popleft()
+
             return True
 
         else:
