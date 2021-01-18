@@ -4,11 +4,21 @@ from .Board import Board
 
 class Game:
 
-    def __init__(self, screen):
-        self.SCREEN = screen
-        self.running = True
+    def __init__(self, p1, p2, screen):
 
+        self.player1 = p1
+        self.player2 = p2
+
+        if not (self.player1 == "human" and self.player2 == "human"):
+            raise NotImplementedError
+
+        self.SCREEN = screen
         self.board = Board()
+        self.player_turn = 1  # white always start first
+        self.running = True
+        self.mode = 0
+
+    def update(self):
         '''
             Game Modes
             0 - Check Mode
@@ -16,29 +26,21 @@ class Game:
             2 - Active Mode
             3 - End Mode
         '''
-        self.mode = 0
-        self.player_turn = 1
-        self.winner = 0
+        if self.board.winner_status is not None:
+            if self.board.winner_status == 0:
+                print("Draw.")
+            else:
+                print(
+                    f"Congratulations! Player {self.board.winner_status} wins.")
 
-    def update(self):
-        if (self.board.no_capture_pieces_count >= 100) or (self.board.is_draw):
-            print('Meet the Draw Condition:\
-            \n1. Same Board State for 3 Times\
-            \n2. 100 Moves with no Capture Piece.\
-            \nResult : Draw\nStart New Board.')
             self.__init__(self.SCREEN)
             self.update()
 
+        # Mode 0 - Find all the valid pieces of current player
         if self.mode == 0:
-            print('Entering Mode 0')
+            # if there are moves available, change the mode to 1
             if self.board.find_valid_pieces(self.player_turn):
                 self.mode = 1
-            else:
-                # No valid move: Loss
-                winner = -1 * self.player_turn
-                print(f"Winner : {winner}")
-                self.__init__(self.SCREEN)
-                self.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -48,13 +50,11 @@ class Game:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
 
                 if self.mode == 1:
-                    print("Entering Mode 1")
                     if self.board.selection_mode(mouse_x, mouse_y,
                                                  self.player_turn):
                         self.mode = 2
 
                 if self.mode == 2:
-                    print("Entering Mode 2")
                     self.board.valid_pieces = []
                     if self.board.find_valid_moves(self.player_turn):
                         self.mode = 3
@@ -62,13 +62,11 @@ class Game:
                         self.mode = 0
 
                 elif self.mode == 3:
-                    print("Entering Mode 3")
                     if self.board.move_piece(mouse_x, mouse_y,
                                              self.player_turn):
-                        self.mode = 0
                         self.player_turn = -1 * self.player_turn
-                    else:
-                        self.mode = 0
+
+                    self.mode = 0
 
     def render(self):
 

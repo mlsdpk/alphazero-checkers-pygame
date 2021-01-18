@@ -31,7 +31,7 @@ class Board:
         self.no_capture_pieces_count = 0
         self.king_side = np.array([0, 0])
         self.grid_buffer = deque()
-        self.is_draw = False
+        self.winner_status = None
 
     def init_grid(self):
         """Initialize(Reset) Grid Board
@@ -140,6 +140,10 @@ class Board:
 
         self.valid_pieces = force_captures if (
             len(force_captures) > 0) else free_moves
+
+        # decide win/loss/draw conditions
+        if not (len(self.valid_pieces) > 0):
+            self.winner_status = -1 * player_turn
         return (len(self.valid_pieces) > 0)
 
     def find_valid_moves(self, player_turn, row=None, col=None):
@@ -177,7 +181,7 @@ class Board:
                                     corner_row, corner_col, grid_dir,
                                     player_turn, player_status):
         """ The function does three things:
-        
+
                 - checks if a grid is empty, if empty, store that position
                   to "self.piece_free_grids"
                 - if its not empty, checks if there is an own piece or enemy
@@ -378,13 +382,19 @@ class Board:
 
             self.selected_piece = None
 
+            # if there is no piece captured for more then 100 turns
+            # considered as draw
+            if self.no_capture_pieces_count >= 100:
+                print("No piece captured for more than 100 turns.")
+                self.winner_status = 0
+
             # If both sides have king piece:
             if self.king_side.all():
                 self.grid_buffer.append(np.array(self.grid))
                 if len(self.grid_buffer) > 8:
                     if (self.grid_buffer[-1] == self.grid_buffer[0]).all():
-                        self.is_draw = True
-                        print("\nSame Board State for 3 Times...\n")
+                        self.winner_status = 0
+                        print("Same Board State for 3 times.")
                     self.grid_buffer.popleft()
 
             return True
