@@ -23,7 +23,6 @@ pygame.init()
 width, height = 640, 640
 SCREEN = pygame.display.set_mode([width, height])
 
-
 def main():
 
     # initialize game object

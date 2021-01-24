@@ -17,6 +17,8 @@ class Game:
         self.player_turn = 1  # white always start first
         self.running = True
         self.mode = 0
+        self.mouse_clicked = False
+        self.mouse_x = self.mouse_y = None
 
     def update(self):
         '''
@@ -26,6 +28,38 @@ class Game:
             2 - Active Mode
             3 - End Mode
         '''
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.mouse_x, self.mouse_y = pygame.mouse.get_pos()
+                self.mouse_clicked = True
+
+        # Mode 0 - Find all the valid pieces of current player
+        if self.mode == 0:
+            # if there are moves available, change the mode to 1
+            if self.board.find_valid_pieces(self.player_turn):
+                self.mode = 1
+        
+        if self.mouse_clicked:
+            if self.mode == 1:
+                if self.board.selection_mode(self.mouse_x, self.mouse_y, self.player_turn):
+                    self.mode = 2
+
+            if self.mode == 2:
+                self.board.valid_pieces = []
+                if self.board.find_valid_moves(self.player_turn):
+                    self.mode = 3
+                else:
+                    self.mode = 0
+
+            elif self.mode == 3:
+                if self.board.move_piece(self.mouse_x, self.mouse_y, self.player_turn):
+                    self.player_turn = -1 * self.player_turn
+                    self.mode = 0
+            self.mouse_clicked = False
+
         if self.board.winner_status is not None:
             if self.board.winner_status == 0:
                 print("Draw.")
@@ -35,38 +69,6 @@ class Game:
 
             self.__init__(self.SCREEN)
             self.update()
-
-        # Mode 0 - Find all the valid pieces of current player
-        if self.mode == 0:
-            # if there are moves available, change the mode to 1
-            if self.board.find_valid_pieces(self.player_turn):
-                self.mode = 1
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-
-                if self.mode == 1:
-                    if self.board.selection_mode(mouse_x, mouse_y,
-                                                 self.player_turn):
-                        self.mode = 2
-
-                if self.mode == 2:
-                    self.board.valid_pieces = []
-                    if self.board.find_valid_moves(self.player_turn):
-                        self.mode = 3
-                    else:
-                        self.mode = 0
-
-                elif self.mode == 3:
-                    if self.board.move_piece(mouse_x, mouse_y,
-                                             self.player_turn):
-                        self.player_turn = -1 * self.player_turn
-
-                    self.mode = 0
 
     def render(self):
 
