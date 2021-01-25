@@ -4,16 +4,28 @@ from checkers.Game import Game
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 
-parser.add_argument('-w',
+parser.add_argument('--p1',
                     action='store',
                     type=str,
-                    choices=['human', 'minimax0', "minimax1", "alphazero"],
+                    choices=['human', 'minimax', "alphazero"],
                     help='Set the white player to either human or AIs')
 
-parser.add_argument('-b',
+parser.add_argument('--p2',
                     action='store',
                     type=str,
-                    choices=['human', 'minimax0', "minimax1", "alphazero"],
+                    choices=['human', 'minimax', "alphazero"],
+                    help='Set the black player to either human or AIs')
+
+parser.add_argument('--p1_depth',
+                    action='store',
+                    type=int,
+                    default=1,
+                    help='Set the black player to either human or AIs')
+
+parser.add_argument('--p2_depth',
+                    action='store',
+                    type=int,
+                    default=1,
                     help='Set the black player to either human or AIs')
 
 args = parser.parse_args()
@@ -26,7 +38,7 @@ SCREEN = pygame.display.set_mode([width, height])
 def main():
 
     # initialize game object
-    game = Game(args.w, args.b, SCREEN)
+    game = Game(args.p1, args.p2, SCREEN, args.p1_depth, args.p2_depth)
 
     while game.running:
 

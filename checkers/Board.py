@@ -33,6 +33,11 @@ class Board:
         self.grid_buffer = deque()
         self.winner_status = None
 
+        self.no_of_white_pieces = 12
+        self.no_of_black_pieces = 12
+        self.no_of_white_kings = 0
+        self.no_of_black_kings = 0
+
     def init_grid(self):
         """Initialize(Reset) Grid Board
         """
@@ -359,12 +364,14 @@ class Board:
             if self.grid[selected_row][selected_col].position[
                     0] == 0 and player_turn == -1:
                 self.grid[selected_row][selected_col].status = 'king'
+                self.no_of_black_kings += 1
 
                 self.king_side[0] = 1
             elif self.grid[selected_row][selected_col].position[
                     0] == 7 and player_turn == 1:
                 self.grid[selected_row][selected_col].status = 'king'
                 self.king_side[1] = 1
+                self.no_of_white_kings += 1
 
             self.grid[self.selected_piece[0]][self.selected_piece[1]] = 0
 
@@ -373,6 +380,15 @@ class Board:
                 capture_piece = self.capture_pieces[(selected_row,
                                                      selected_col)][0]
                 self.grid[capture_piece[0]][capture_piece[1]] = 0
+
+                # if white player turn
+                if player_turn == 1:
+                    # decrease one to no of black pieces
+                    self.no_of_black_pieces -= 1
+                else:
+                    # otherwise, decrease one to no of white pieces
+                    self.no_of_white_pieces -= 1
+                
 
                 selected_row, selected_col = self.capture_pieces[(
                     selected_row, selected_col)][1]
@@ -406,6 +422,32 @@ class Board:
                 self.selected_piece[1]].selected = False
             self.selected_piece = None
             return False
+
+    def move(self, piece, valid_grid, player_turn):
+
+        self.selected_piece = (piece[0], piece[1])
+
+        mouse_x = self.grid_size * valid_grid[1] # x = grid_size*col
+        mouse_y = self.grid_size * valid_grid[0] # y = grid_size*row
+        self.move_piece(mouse_x, mouse_y, player_turn)
+
+    def evaluate(self, player_turn):
+        """ Evaluation function based on current player perspective:
+
+        Args:
+            player_turn: Current player turn (white or black)
+
+        Returns:
+            Score of the board from current player perspective
+        """
+        # from white player perspective
+        if player_turn == 1:
+            #white pieces - #black pieces (kings considered also)
+            return (self.no_of_white_pieces - self.no_of_black_pieces) + (self.no_of_white_kings - self.no_of_black_kings)*0.5
+        # from black player perspective
+        else:
+            #black pieces - #white pieces (kings considered also)
+            return self.no_of_black_pieces - self.no_of_white_pieces + (self.no_of_black_kings - self.no_of_white_kings)*0.5
 
     # rendering stuffs
     def render(self, screen, player_turn):
